@@ -13,17 +13,44 @@ const ExamPage = () => {
   const [timeLeft, setTimeLeft] = useState(0);
   const [examCompleted, setExamCompleted] = useState(false);
   const [badge, setBadge] = useState(null);
+  const [userAnswers, setUserAnswers] = useState([]);
+  const [showResults, setShowResults] = useState(false);
   const timerRef = useRef(null);
 
   // Configuration constants
   const timeForDifficulty = { easy: 60, medium: 45, hard: 30 };
   const questionLimits = { min: 3, max: 15 };
-  const badges = {
-    perfect: { name: "Perfect Score", color: "bg-yellow-400", text: "text-yellow-800" },
-    excellent: { name: "Excellent", color: "bg-green-400", text: "text-green-800" },
-    good: { name: "Good", color: "bg-blue-400", text: "text-blue-800" },
-    average: { name: "Average", color: "bg-purple-400", text: "text-purple-800" },
-    poor: { name: "Needs Improvement", color: "bg-red-400", text: "text-red-800" }
+   const badges = {
+    perfect: { 
+      name: "Perfect Score", 
+      color: "bg-yellow-400", 
+      text: "text-yellow-800",
+      gif: "https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExamR4ODhqZTY3Z2dlM3YzbW1ycG9rcmZhbm9sdHQxaW1udXlnbnFucCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/zb1IbMHM5Y1gy6bWRM/giphy.gif"
+    },
+    excellent: { 
+      name: "Excellent", 
+      color: "bg-green-400", 
+      text: "text-green-800",
+      gif: "https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExMmRpb2N4OXYxMndmNW13M2poaWFka2NmaXM5dnc4dHNheTZxNmJ4eSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/kUFlw7XaGE36w/giphy.gif"
+    },
+    good: { 
+      name: "Good", 
+      color: "bg-blue-400", 
+      text: "text-blue-800",
+      gif: "https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExcW5pMWR1a3JjeXlncWw0bjVyNDhia21iNTRiNTl0MXpoNnFieXlnYyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/tIeCLkB8geYtW/giphy.gif"
+    },
+    average: { 
+      name: "Average", 
+      color: "bg-purple-400", 
+      text: "text-purple-800",
+      gif: "https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExaGIwbWlyNGgyNnplODNkbHNtdGRoMzA3b2wxbWxjc2IycmlwN3I2YSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/iSyDSFVyEnsWD43q4n/giphy.gif"
+    },
+    poor: { 
+      name: "Needs Improvement", 
+      color: "bg-red-400", 
+      text: "text-red-800",
+      gif: "https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExZjNrYXg5Mnd5ZmZsYnRnYjRkNXFlY3FyMDM2cGpocWpqOHBmdXd1NSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/UeVNmXsALFcTdAwiZN/giphy.gif"
+    }
   };
 
   useEffect(() => {
@@ -74,6 +101,8 @@ const ExamPage = () => {
     setSelectedOption(null);
     setExamCompleted(false);
     setBadge(null);
+    setUserAnswers([]);
+    setShowResults(false);
 
     const prompt = `Generate ${questionCount} ${difficulty} multiple-choice questions about "${topic}". 
     Format each question as:
@@ -146,6 +175,11 @@ const ExamPage = () => {
   };
 
   const handleNextQuestion = () => {
+    // Save user's answer
+    const newUserAnswers = [...userAnswers];
+    newUserAnswers[currentQIndex] = selectedOption;
+    setUserAnswers(newUserAnswers);
+
     // Check if answer is correct
     if (selectedOption === questions[currentQIndex].correctAnswer) {
       setScore(prev => prev + 1);
@@ -172,6 +206,21 @@ const ExamPage = () => {
     setQuestions([]);
     setExamCompleted(false);
     setBadge(null);
+    setUserAnswers([]);
+    setShowResults(false);
+  };
+
+  const retryExam = () => {
+    setCurrentQIndex(0);
+    setScore(0);
+    setSelectedOption(null);
+    setExamCompleted(false);
+    setUserAnswers([]);
+    setTimeLeft(timeForDifficulty[difficulty]);
+  };
+
+  const toggleResults = () => {
+    setShowResults(!showResults);
   };
 
   const formatTime = (seconds) => {
@@ -182,7 +231,6 @@ const ExamPage = () => {
 
   return (
     <div className="min-h-screen flex flex-col font-sans bg-gray-50">
-
       {/* Main content */}
       <main className="flex-grow max-w-3xl mx-auto p-6 w-full">
         {!questions.length && !examCompleted && (
@@ -301,21 +349,80 @@ const ExamPage = () => {
         )}
 
         {examCompleted && (
-          <div className="bg-white p-6 rounded-lg shadow-md text-center">
-            <h2 className="text-2xl font-bold mb-4">Exam Completed!</h2>
-            
-            {badge && (
-              <div className={`inline-block ${badge.color} ${badge.text} px-4 py-2 rounded-full font-bold mb-4`}>
-                {badge.name}
+          <div className="bg-white p-6 rounded-lg shadow-md">
+            <div className="text-center mb-6">
+              <h2 className="text-2xl font-bold mb-4">Exam Completed!</h2>
+              
+              {badge && (
+                <div className="flex flex-col items-center mb-6">
+                  <div className={`inline-block ${badge.color} ${badge.text} px-4 py-2 rounded-full font-bold mb-4`}>
+                    {badge.name}
+                  </div>
+                  <img 
+                    src={badge.gif} 
+                    alt="Result GIF" 
+                    className="w-48 h-48 object-cover rounded-lg mb-4"
+                  />
+                </div>
+              )}
+
+              <p className="text-xl mb-2">
+                Your score: <span className="font-bold">{score}</span> out of <span className="font-bold">{questions.length}</span>
+              </p>
+              <p className="text-lg mb-6">
+                ({Math.round((score / questions.length) * 100)}%)
+              </p>
+            </div>
+
+            <button
+              onClick={toggleResults}
+              className="w-full mb-6 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded"
+            >
+              {showResults ? 'Hide Detailed Results' : 'Show Detailed Results'}
+            </button>
+
+            {showResults && (
+              <div className="mb-6 space-y-6">
+                {questions.map((q, index) => {
+                  const userAnswer = userAnswers[index];
+                  const isCorrect = userAnswer === q.correctAnswer;
+                  
+                  return (
+                    <div key={index} className={`p-4 rounded-lg border ${
+                      isCorrect ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'
+                    }`}>
+                      <p className="font-semibold mb-3">Question {index + 1}: {q.question}</p>
+                      
+                      <div className="space-y-2">
+                        {['A', 'B', 'C', 'D'].map(option => (
+                          q.options[option] && (
+                            <div 
+                              key={option}
+                              className={`p-2 rounded ${
+                                option === q.correctAnswer 
+                                  ? 'bg-green-100 border border-green-300'
+                                  : option === userAnswer && !isCorrect
+                                    ? 'bg-red-100 border border-red-300'
+                                    : 'bg-gray-50'
+                              }`}
+                            >
+                              <span className="font-medium mr-2">{option}:</span>
+                              {q.options[option]}
+                              {option === q.correctAnswer && (
+                                <span className="ml-2 text-green-700 font-semibold">(Correct Answer)</span>
+                              )}
+                              {option === userAnswer && !isCorrect && (
+                                <span className="ml-2 text-red-700 font-semibold">(Your Answer)</span>
+                              )}
+                            </div>
+                          )
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )}
-
-            <p className="text-xl mb-2">
-              Your score: <span className="font-bold">{score}</span> out of <span className="font-bold">{questions.length}</span>
-            </p>
-            <p className="text-lg mb-6">
-              ({Math.round((score / questions.length) * 100)}%)
-            </p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <button
@@ -325,13 +432,7 @@ const ExamPage = () => {
                 Create New Exam
               </button>
               <button
-                onClick={() => {
-                  setCurrentQIndex(0);
-                  setScore(0);
-                  setSelectedOption(null);
-                  setExamCompleted(false);
-                  setTimeLeft(timeForDifficulty[difficulty]);
-                }}
+                onClick={retryExam}
                 className="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded"
               >
                 Retry This Exam
